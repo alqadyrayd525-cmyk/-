@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مهند ستور | النظام التفاعلي لإدارة المتجر والمحافظ</title>
+  
+  <!-- خط Cairo الأصيل والمعتمد للهوية -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- مكتبة Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0A192F',
+              navy: '#112240',
+              lightNavy: '#1E3A5F',
+              orange: '#FF7A00',
+              orangeHover: '#E06A00',
+              orangeSoft: 'rgba(255, 122, 0, 0.12)',
+              surface: '#F8FAFC',
+              border: '#E2E8F0',
+            }
+          },
+          fontFamily: {
+            sans: ['Cairo', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* شريط التمرير الناعم */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .phone-shadow {
+      box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.65), 0 0 0 10px #1e293b;
+    }
+
+    .screen-fade {
+      animation: screenFade 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes screenFade {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .no-select {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* تأثيرات البطاقات النظيفة المدمجة */
+    .clean-card-hover {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .clean-card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px -2px rgba(10, 25, 47, 0.08);
+      border-color: #FF7A00;
+    }
+  </style>
+</head>
+<body class="bg-[#070E1A] text-slate-800 font-sans min-h-screen flex flex-col items-center p-2 sm:p-5 no-select">
+
+  <!-- ================= 1. الترويسة والشعار ================= -->
+  <header class="w-full max-w-6xl flex flex-col items-center text-center my-2 sm:my-3">
+    <div class="flex items-center gap-3.5 bg-brand-navy/95 border border-brand-lightNavy/60 backdrop-blur-md px-6 py-2.5 rounded-full shadow-2xl">
+      <div class="relative w-10 h-10 flex-shrink-0">
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="26" fill="#0A192F"/>
+          <path d="M22 72V34L50 50L78 34V72" stroke="#FF7A00" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M50 50V78" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="50" cy="22" r="7" fill="#FF7A00"/>
+        </svg>
+      </div>
+
+      <div class="text-right">
+        <h1 class="text-xl sm:text-2xl font-black text-white tracking-wide flex items-center gap-2">
+          مهند ستور
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-brand-orange text-white">النسخة التفاعلية المعتمدة</span>
+        </h1>
+        <p class="text-xs font-semibold text-slate-300">إدارة المخزون، محافظ الدفع (جيب/فلوسك)، وحوافز خدمة العملاء</p>
+      </div>
+    </div>
+
+    <!-- أزرار أوضاع العرض: هاتف مفرد أو بانوراما الشاشات الخمس -->
+    <div class="mt-3.5 flex flex-wrap justify-center gap-2 bg-brand-navy/60 p-1.5 rounded-2xl border border-brand-lightNavy/40">
+      <button onclick="setPresentationMode('single')" id="btn-mode-single" class="px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-white bg-brand-orange shadow-lg shadow-brand-orange/30">
+        📱 محاكي الهاتف الحي (تنقل تفاعلي)
+      </button>
+      <button onclick="setPresentationMode('showcase')" id="btn-mode-showcase" class="px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-300 hover:text-white">
+        🖥️ بانوراما الشاشات الخمس جنباً إلى جنب
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 2. الحاوية الرئيسية للتطبيق ================= -->
+  <main class="w-full max-w-7xl flex justify-center items-start gap-8 my-auto pb-8">
+
+    <!-- الهاتف التفاعلي الرئيسي -->
+    <div id="interactive-phone-wrapper" class="flex flex-col items-center">
+      <div class="w-[365px] h-[755px] bg-white rounded-[44px] phone-shadow flex flex-col overflow-hidden relative border-2 border-slate-700">
+        
+        <!-- شريط الحالة (Status Bar) -->
+        <div class="bg-brand-dark text-white text-[11px] font-bold px-6 py-2.5 flex justify-between items-center z-30">
+          <span id="live-clock">09:30</span>
+          <div class="w-20 h-4 bg-black rounded-full flex items-center justify-center">
+            <div class="w-2.5 h-2.5 rounded-full bg-slate-800"></div>
+          </div>
+          <div class="flex items-center gap-1.5 text-[10px]">
+            <span>4G+</span>
+            <span class="text-emerald-400">●</span>
+            <span>99%</span>
+          </div>
+        </div>
+
+        <!-- شريط التطبيق AppBar (مع محدد العملات الحية) -->
+        <div class="bg-brand-dark text-white px-4 py-2.5 flex items-center justify-between shadow border-b border-brand-navy z-20">
+          <div class="flex items-center gap-2">
+            <button onclick="openDrawerPlaceholder()" class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center text-slate-300 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
+            </button>
+            <div>
+              <h2 id="appbar-title" class="font-extrabold text-sm text-white">الرئيسية</h2>
+              <span id="appbar-subtitle" class="text-[9px] text-slate-400 block -mt-0.5">لوحة المؤشرات والقيادة</span>
+            </div>
+          </div>
+
+          <!-- محدد العملات الثلاث: يمني، سعودي، دولار -->
+          <div class="flex items-center gap-1 bg-brand-navy px-2 py-1 rounded-xl border border-brand-lightNavy">
+            <span class="text-[9px] font-bold text-slate-400">العملة:</span>
+            <select id="currency-selector" onchange="changeCurrency(this.value)" class="bg-transparent text-brand-orange text-xs font-black focus:outline-none cursor-pointer">
+              <option value="USD" class="bg-brand-dark text-white">$ USD</option>
+              <option value="YER" class="bg-brand-dark text-white">﷼ YER</option>
+              <option value="SAR" class="bg-brand-dark text-white">ر.س SAR</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ================= مساحة عرض الشاشات التفاعلية ================= -->
+        <div id="screens-viewport" class="flex-1 bg-slate-50 overflow-y-auto relative flex flex-col">
+
+          <!-- 1. شاشة الرئيسية (Dashboard) -->
+          <div id="view-home" class="screen-view screen-fade p-3.5 flex flex-col gap-3">
+            
+            <!-- تذكيرات واحتياجات العملاء الذكية -->
+            <div class="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-2.5 flex items-center gap-2.5 shadow-sm">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                🔔
+              </div>
+              <div class="flex-1 text-right">
+                <div class="text-[11px] font-extrabold text-amber-900">مواعيد احتياج العملاء (تذكير اليوم)</div>
+                <div class="text-[10px] text-amber-700">3 عملاء يقترب موعد نفاد شحناتهم الدورية</div>
+              </div>
+              <button onclick="showToast('تم تصدير المواعيد والتذكيرات لتقويم الجوال 📅')" class="text-[10px] font-bold text-amber-800 bg-amber-200/60 px-2 py-1 rounded-lg hover:bg-amber-200 transition">
+                تصدير 📅
+              </button>
+            </div>
+
+            <!-- المؤشرات المالية السريعة -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                <span class="text-[10px] font-bold text-slate-400">إجمالي المبيعات (الدخل)</span>
+                <div class="text-base font-black text-brand-dark mt-0.5" data-currency-val="14250">$14,250</div>
+                <span class="text-[9px] font-bold text-emerald-600">▲ +14% هذا الشهر</span>
+              </div>
+              <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                <span class="text-[10px] font-bold text-slate-400">صافي الربح الفعلي</span>
+                <div class="text-base font-black text-emerald-600 mt-0.5" data-currency-val="4050">$4,050</div>
+                <span class="text-[9px] font-bold text-slate-400">بعد التكلفة والإعلانات</span>
+              </div>
+            </div>
+
+            <!-- بطاقة موقف السيولة في المحافظ -->
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold text-slate-400">السيولة المتاحة في المحافظ (جيب، فلوسك...)</span>
+                <div class="text-sm font-black text-emerald-600 mt-0.5" id="home-total-liquidity" data-currency-val="8450">$8,450</div>
+              </div>
+              <button onclick="navigateToTab('finance')" class="text-xs font-bold text-brand-orange bg-brand-orangeSoft px-3 py-1.5 rounded-xl hover:bg-brand-orange hover:text-white transition">
+                إدارة المحافظ ←
+              </button>
+            </div>
+
+            <!-- بطاقة الذمم والديون المترتبة -->
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex justify-between items-center text-[11px] font-extrabold text-slate-700 mb-2 border-b border-slate-100 pb-1.5">
+                <span>موقف الذمم والديون في السوق</span>
+                <span class="text-brand-orange text-[10px]">محدث لحظياً</span>
+              </div>
+              <div class="flex justify-between items-center text-xs">
+                <div>
+                  <div class="text-[10px] text-slate-400 font-semibold">مستحق لي (عند العملاء والمناديب):</div>
+                  <div class="text-sm font-black text-emerald-600" data-currency-val="3400">$3,400</div>
+                </div>
+                <div class="text-left">
+                  <div class="text-[10px] text-slate-400 font-semibold">مستحق عليّ (للموردين والشحن):</div>
+                  <div class="text-sm font-black text-rose-600" data-currency-val="1200">$1,200</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- كرت ملخص المخزون السريع -->
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold text-slate-400">المخزون التجاري الجاهز للبيع</span>
+                <div class="text-sm font-black text-brand-dark">1,480 قطعة <span class="text-[10px] font-normal text-slate-500">(بـ 4 مخازن)</span></div>
+              </div>
+              <button onclick="navigateToTab('inventory')" class="text-xs font-bold text-brand-orange bg-brand-orangeSoft px-3 py-1.5 rounded-xl hover:bg-brand-orange hover:text-white transition">
+                المخزن ←
+              </button>
+            </div>
+
+            <!-- أحدث الطلبات -->
+            <div class="flex justify-between items-center mt-1">
+              <span class="text-xs font-extrabold text-slate-700">أحدث العمليات الصادرة</span>
+              <button onclick="navigateToTab('orders')" class="text-[11px] font-bold text-brand-orange">عرض الكل</button>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <div onclick="openInvoiceModal('ORD-1095', 'أحمد نبيل', '$420', 'داخل صنعاء (المندوب مجدي)', 'سلم للعميل تماماً', 'paid')" class="cursor-pointer bg-white p-3 rounded-2xl border border-slate-200 hover:border-brand-orange/60 shadow-sm flex justify-between items-center transition">
+                <div>
+                  <div class="text-xs font-extrabold text-slate-800">#ORD-1095 - أحمد نبيل</div>
+                  <div class="text-[10px] text-slate-400">خدمة العملاء: أصيل | محفظة جيب</div>
+                </div>
+                <div class="text-left">
+                  <div class="text-xs font-black text-brand-dark" data-currency-val="420">$420</div>
+                  <span class="bg-emerald-50 text-emerald-600 text-[9px] font-extrabold px-1.5 py-0.5 rounded">مكتمل ✔</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. شاشة المخزن (المخزن الرئيسي ومخازن الوكلاء والمناديب + رصيد الهدايا) -->
+          <div id="view-inventory" class="screen-view screen-fade p-3.5 hidden flex-col gap-3">
+            <div class="flex gap-2">
+              <button onclick="openAddProductModal()" class="flex-1 bg-brand-orange hover:bg-brand-orangeHover active:scale-95 text-white py-2.5 px-3 rounded-xl text-xs font-bold shadow-md shadow-brand-orange/20 flex items-center justify-center gap-1.5 transition">
+                <span class="text-sm leading-none">+</span> إضافة مخزون / صنف
+              </button>
+              <button onclick="openCreateAgentModal()" class="flex-1 bg-white hover:bg-slate-100 active:scale-95 text-brand-dark border border-slate-200 py-2.5 px-3 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition">
+                <span class="text-sm leading-none">+</span> إنشاء مخزن لوكيل
+              </button>
+            </div>
+
+            <!-- بطاقة المخزن الرئيسي النظيفة (فقط الاسم وتفتح التفاصيل بالنقر) -->
+            <div onclick="openWarehouseDetailsModal('المخزن الرئيسي', 'مركز الإمداد العام والمستودع المركزي لكافة الأصناف', true)" class="cursor-pointer bg-gradient-to-br from-[#0A192F] to-[#172A45] text-white p-4.5 rounded-2xl shadow-md border border-slate-700 hover:border-brand-orange transition text-center transform hover:-translate-y-0.5 clean-card-hover">
+              <div class="text-base font-extrabold tracking-wide">المخزن الرئيسي</div>
+            </div>
+
+            <!-- بطاقات عهد الوكلاء والمناديب النظيفة (فقط الاسم) -->
+            <div id="agents-cards-container" class="flex flex-col gap-2.5">
+              <div onclick="openWarehouseDetailsModal('عهدة المندوب: مجدي ناصر', 'مندوب التوصيل داخل صنعاء - منطقة الأصبحي وحدة', false)" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm transition text-center transform hover:-translate-y-0.5 clean-card-hover">
+                <div class="text-sm font-extrabold text-slate-800">عهدة المندوب: مجدي ناصر</div>
+              </div>
+
+              <div onclick="openWarehouseDetailsModal('عهدة المندوب: نبيل سعيد', 'مندوب التوصيل داخل صنعاء - شارع تعز وهائل', false)" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm transition text-center transform hover:-translate-y-0.5 clean-card-hover">
+                <div class="text-sm font-extrabold text-slate-800">عهدة المندوب: نبيل سعيد</div>
+              </div>
+
+              <div onclick="openWarehouseDetailsModal('عهدة شركة التوصيل السريع', 'شحنات التوزيع الخارجي للمحافظات', false)" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm transition text-center transform hover:-translate-y-0.5 clean-card-hover">
+                <div class="text-sm font-extrabold text-slate-800">عهدة شركة التوصيل السريع</div>
+              </div>
+            </div>
+
+            <!-- سطر / عداد الهدايا الترويجي المستقل تماماً (معزول عن التكلفة والقطع التجارية) -->
+            <div class="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-2.5 px-3 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🎁</span>
+                <div>
+                  <div class="text-xs font-black text-amber-900">عداد أصناف الهدايا الترويجية المنفقة</div>
+                  <div class="text-[9px] text-amber-700">معزولة تماماً ولا تتدخل في عدد وقيمة المخزون التجاري</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="bg-amber-200/80 text-amber-900 text-xs font-black px-2.5 py-1 rounded-xl">65 هدية منحت</span>
+              </div>
+            </div>
+
+            <!-- شريط الملخص السفلي الثابت الإجمالي -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm mt-auto">
+              <div class="flex items-center justify-between text-center divide-x divide-x-reverse divide-slate-100">
+                <div class="flex-1 px-1">
+                  <div class="text-[10px] font-bold text-slate-400">إجمالي القطع التجارية (كافة المخازن)</div>
+                  <div class="text-sm font-black text-brand-dark mt-0.5">1,480 <span class="text-[10px] font-medium text-slate-500">قطعة</span></div>
+                </div>
+                <div class="flex-1 px-1">
+                  <div class="text-[10px] font-bold text-slate-400">إجمالي قيمة المخزون (بالتكلفة)</div>
+                  <div class="text-sm font-black text-brand-orange mt-0.5" data-currency-val="38650">$38,650</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. شاشة الطلبات (توصيل صنعاء، مكاتب الطرود، وأسباب التعذر) -->
+          <div id="view-orders" class="screen-view screen-fade p-3.5 hidden flex-col gap-3">
+            
+            <!-- تبديل التبويب الفرعي -->
+            <div class="flex bg-slate-200/80 p-1 rounded-xl">
+              <button onclick="setOrdersSubTab('orders')" id="subtab-btn-orders" class="flex-1 py-1.5 text-xs font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition">
+                سجل الطلبات والتوصيل (24)
+              </button>
+              <button onclick="setOrdersSubTab('customers')" id="subtab-btn-customers" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-dark transition">
+                دليل العملاء والديون
+              </button>
+            </div>
+
+            <!-- محتوى الطلبات الفرعي -->
+            <div id="orders-subcontent-orders" class="flex flex-col gap-2.5 flex-1">
+              
+              <!-- فلاتر التوصيل السريعة -->
+              <div class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] font-bold">
+                <button onclick="filterOrderType('all', this)" class="order-chip active px-3 py-1 rounded-xl bg-brand-dark text-white whitespace-nowrap">الكل (24)</button>
+                <button onclick="filterOrderType('sanaa', this)" class="order-chip px-3 py-1 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">داخل صنعاء</button>
+                <button onclick="filterOrderType('outside', this)" class="order-chip px-3 py-1 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">محافظات / طرود</button>
+                <button onclick="filterOrderType('failed', this)" class="order-chip px-3 py-1 rounded-xl bg-white border border-slate-200 text-rose-600 whitespace-nowrap">تعذر التسليم</button>
+              </div>
+
+              <div class="flex gap-2">
+                <input type="text" placeholder="بحث بالرقم أو العميل..." class="flex-1 bg-white border border-slate-200 text-xs rounded-xl py-2 px-3 font-semibold text-slate-700 focus:outline-none focus:border-brand-orange shadow-sm">
+                <button onclick="openNewOrderModal()" class="bg-brand-orange hover:bg-brand-orangeHover active:scale-95 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-md shadow-brand-orange/20 transition whitespace-nowrap">
+                  + طلب جديد
+                </button>
+              </div>
+
+              <!-- بطاقات الطلبات المدمجة -->
+              <div class="flex flex-col gap-2 flex-1 overflow-y-auto" id="orders-items-container">
+                
+                <!-- طلب 1: داخل صنعاء -->
+                <div data-type="sanaa" onclick="openInvoiceModal('ORD-1092', 'محمد علي الكبسي', '$420', 'داخل صنعاء (المندوب: مجدي ناصر)', 'تم التسليم تماماً للعميل', 'paid')" class="order-row cursor-pointer bg-white p-3 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm transition">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-extrabold text-xs text-slate-800">محمد علي الكبسي</span>
+                    <span class="text-[10px] font-mono text-slate-400">#ORD-1092</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mb-1.5 flex justify-between">
+                    <span>صنعاء - عهدة المندوب مجدي (دفع استلام)</span>
+                    <span class="text-brand-orange font-bold">أجرة المندوب: $3</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-black text-brand-dark" data-currency-val="420">$420</span>
+                    <span class="bg-emerald-50 text-emerald-600 text-[10px] font-extrabold px-2 py-0.5 rounded-md">تم التسليم تماماً ✔</span>
+                  </div>
+                </div>
+
+                <!-- طلب 2: محافظات عبر مكتب طرود -->
+                <div data-type="outside" onclick="openInvoiceModal('ORD-1091', 'مؤسسة الأفق (إب)', '$1,150', 'خارج صنعاء (مكتب طرود الرويشان)', 'بانتظار استلام العميل من المكتب', 'credit')" class="order-row cursor-pointer bg-white p-3 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm transition">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-extrabold text-xs text-slate-800">مؤسسة الأفق للالكترونيات</span>
+                    <span class="text-[10px] font-mono text-brand-orange">#ORD-1091</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mb-1.5 flex justify-between">
+                    <span>شحن إب - مكتب طرود الرويشان (دفع مسبق)</span>
+                    <span class="text-slate-600 font-bold">استحقاق المكتب: $5</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-black text-brand-dark" data-currency-val="1150">$1,150</span>
+                    <span class="bg-rose-50 text-rose-600 text-[10px] font-extrabold px-2 py-0.5 rounded-md">آجل (متبقي $400)</span>
+                  </div>
+                </div>
+
+                <!-- طلب 3: تعذر التسليم -->
+                <div data-type="failed" onclick="openFailedReasonModal('ORD-1088', 'صالح المقبلي', 'عدم تجاوب العميل مع اتصالات المندوب')" class="order-row cursor-pointer bg-white p-3 rounded-2xl border border-rose-200 hover:border-rose-400 shadow-sm transition">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-extrabold text-xs text-slate-800">صالح المقبلي (#ORD-1088)</span>
+                    <span class="bg-rose-100 text-rose-700 text-[9px] font-black px-2 py-0.5 rounded">تعذر التسليم ⚠️</span>
+                  </div>
+                  <div class="text-[10px] text-rose-600">
+                    السبب: عدم تجاوب العميل مع اتصالات المندوب (أُعيدت الكمية للمخزن)
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- شريط ملخص الطلبات اليومية السفلي الثابت -->
+              <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm mt-auto">
+                <div class="flex items-center justify-between text-center divide-x divide-x-reverse divide-slate-100">
+                  <div class="flex-1 px-1">
+                    <div class="text-[10px] font-bold text-slate-400">إجمالي طلبات اليوم</div>
+                    <div class="text-sm font-black text-brand-dark mt-0.5">18 طلب</div>
+                  </div>
+                  <div class="flex-1 px-1">
+                    <div class="text-[10px] font-bold text-slate-400">إجمالي المبيعات المحققة</div>
+                    <div class="text-sm font-black text-brand-orange mt-0.5" data-currency-val="4850">$4,850</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- محتوى دليل العملاء والزبائن المميزين -->
+            <div id="orders-subcontent-customers" class="flex-col gap-2.5 hidden flex-1">
+              <div class="flex justify-between items-center text-xs font-bold text-slate-500 mb-1">
+                <span>دليل العملاء وتصنيف المميزين</span>
+                <span class="text-brand-orange">⭐ زبون مميز</span>
+              </div>
+
+              <div onclick="openCustomerDetailsModal('محمد علي الكبسي', '770123456', 'صنعاء - شارع تعز', '$0', 'خالص ✔', true, 'زبون مميز VIP ⭐')" class="cursor-pointer bg-white p-3 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition">
+                <div>
+                  <div class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                    محمد علي الكبسي <span class="text-[9px] text-amber-500 font-black">VIP ⭐</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400">770123456 | إجمالي الطلبات: 14 طلب</div>
+                </div>
+                <span class="bg-emerald-50 text-emerald-600 text-[10px] font-extrabold px-2 py-0.5 rounded-md">خالص ✔</span>
+              </div>
+
+              <div onclick="openCustomerDetailsModal('مؤسسة الأفق التقنية', '771987654', 'إب - الدائري الغربي', '$840', 'عليه مديونية', false, 'عميل جملة')" class="cursor-pointer bg-white p-3 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition">
+                <div>
+                  <div class="text-xs font-extrabold text-slate-800">مؤسسة الأفق التقنية</div>
+                  <div class="text-[10px] text-slate-400">771987654 | إجمالي الطلبات: 6 طلبات</div>
+                </div>
+                <span class="bg-rose-50 text-rose-600 text-[10px] font-extrabold px-2 py-0.5 rounded-md" data-currency-val="840">عليه: $840</span>
+              </div>
+
+              <!-- ملخص الديون المعلقة في ذمة العملاء -->
+              <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm mt-auto text-center">
+                <div class="text-[10px] font-bold text-slate-400">إجمالي المبالغ المستحقة لك في ذمة العملاء</div>
+                <div class="text-sm font-black text-rose-600 mt-0.5" data-currency-val="3400">$3,400</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. شاشة المالية والمحافظ وحوافز خدمة العملاء (التحديث الرئيسي) -->
+          <div id="view-finance" class="screen-view screen-fade p-3.5 hidden flex-col gap-3">
+            
+            <!-- تبديل مدمج ناعم بين (المحافظ والخزائن) و (حوافز خدمة العملاء) -->
+            <div class="flex bg-slate-200/80 p-1 rounded-xl">
+              <button onclick="toggleFinanceSub('wallets')" id="tab-wallets-btn" class="flex-1 py-1.5 text-xs font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition">
+                المحافظ والخزائن
+              </button>
+              <button onclick="toggleFinanceSub('cs')" id="tab-cs-btn" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-dark transition">
+                حوافز خدمة العملاء
+              </button>
+            </div>
+
+            <!-- قسم 1: المحافظ والخزائن النقدية -->
+            <div id="finance-wallets-view" class="flex flex-col gap-2.5 flex-1">
+              
+              <!-- زر إنشاء محفظة أو حساب مالي جديد -->
+              <button onclick="openModal('modal-add-wallet')" class="w-full bg-brand-orange hover:bg-brand-orangeHover active:scale-95 text-white py-2.5 px-3 rounded-xl text-xs font-bold shadow-md shadow-brand-orange/20 flex items-center justify-center gap-1.5 transition">
+                <span class="text-sm leading-none">+</span> إنشاء محفظة / حساب مالي جديد
+              </button>
+
+              <!-- حاوية المحافظ الديناميكية (جيب، فلوسك، الكريمي، الكاش...) -->
+              <div id="wallets-list-container" class="flex flex-col gap-2 flex-1 overflow-y-auto">
+                
+                <!-- محفظة جيب -->
+                <div onclick="openAccountLedgerDetailsModal('محفظة جيب (Jeeb)', '450,000 ﷼', 'رقم الحساب: 770169518', 'مستقبل مدفوعات إلكترونية ومبيعات فورية')" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition clean-card-hover">
+                  <div>
+                    <div class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      محفظة جيب (Jeeb)
+                    </div>
+                    <div class="text-[10px] text-slate-400">حساب: 770169518 | محفظة إلكترونية</div>
+                  </div>
+                  <div class="text-sm font-black text-emerald-600" data-currency-val="840">450,000 ﷼</div>
+                </div>
+
+                <!-- محفظة فلوسك -->
+                <div onclick="openAccountLedgerDetailsModal('محفظة فلوسك (Floosak)', '280,000 ﷼', 'رقم الحساب: 775308273', 'مدفوعات التجزئة وبنك اليمن والكويت')" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition clean-card-hover">
+                  <div>
+                    <div class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      محفظة فلوسك (Floosak)
+                    </div>
+                    <div class="text-[10px] text-slate-400">حساب: 775308273 | بنك YKB</div>
+                  </div>
+                  <div class="text-sm font-black text-emerald-600" data-currency-val="523">280,000 ﷼</div>
+                </div>
+
+                <!-- حساب الكريمي -->
+                <div onclick="openAccountLedgerDetailsModal('حساب بنك الكريمي الإسلامي', '$4,200', 'الحساب المصرفي التجاري الرئيسي', 'حوالات المحافظات والطلبات المسبقة')" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition clean-card-hover">
+                  <div>
+                    <div class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-brand-orange"></span>
+                      حساب بنك الكريمي
+                    </div>
+                    <div class="text-[10px] text-slate-400">الرصيد المصرفي التجاري</div>
+                  </div>
+                  <div class="text-sm font-black text-brand-dark" data-currency-val="4200">$4,200</div>
+                </div>
+
+                <!-- درج الكاش الرئيسي -->
+                <div onclick="openAccountLedgerDetailsModal('درج الكاش الرئيسي (الخزينة)', '$2,887', 'النقدية الفعلية المتاحة بالمتجر', 'مقبوضات الكاش المباشرة وتسليمات المناديب')" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition clean-card-hover">
+                  <div>
+                    <div class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                      درج الكاش الرئيسي
+                    </div>
+                    <div class="text-[10px] text-slate-400">النقدية الفعلية بالصندوق</div>
+                  </div>
+                  <div class="text-sm font-black text-brand-orange" data-currency-val="2887">$2,887</div>
+                </div>
+
+              </div>
+
+              <!-- شريط السيولة النقدية المتوفرة الثابت أسفل المحافظ -->
+              <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm mt-auto">
+                <div class="flex items-center justify-between text-center divide-x divide-x-reverse divide-slate-100">
+                  <div class="flex-1 px-1">
+                    <div class="text-[10px] font-bold text-slate-400">إجمالي السيولة الحرة (كافة المحافظ)</div>
+                    <div class="text-sm font-black text-emerald-600 mt-0.5" id="finance-total-liquidity" data-currency-val="8450">$8,450</div>
+                  </div>
+                  <div class="flex-1 px-1">
+                    <div class="text-[10px] font-bold text-slate-400">المعلق بالسوق (ذمم مناديب وعملاء)</div>
+                    <div class="text-sm font-black text-brand-orange mt-0.5" data-currency-val="2300">$2,300</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- قسم 2: حوافز وبونص خدمة العملاء اليدوي -->
+            <div id="finance-cs-view" class="flex-col gap-2.5 hidden flex-1">
+              <div class="bg-blue-50/80 border border-blue-200/80 p-2.5 rounded-xl text-xs text-blue-900 leading-relaxed font-semibold">
+                📌 هنا يتم احتساب إكرامية وحافز موظفي خدمة العملاء يدوياً حسب عدد القطع التي باعوها، مع خيار صرفها فوراً من أي محفظة أو ترحيلها كمستحق في ذمة المتجر.
+              </div>
+
+              <!-- بطاقات موظفي خدمة العملاء -->
+              <div onclick="openCsCalcModal('اصيل', 24, [ { name: 'شواحن سريعة Anker', qty: 14, defaultBonus: 500 }, { name: 'جوالات Galaxy A55', qty: 10, defaultBonus: 2000 } ])" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition clean-card-hover">
+                <div>
+                  <div class="text-xs font-extrabold text-slate-800">أصيل (خدمة عملاء ومبيعات)</div>
+                  <div class="text-[10px] text-slate-400">إجمالي المبيعات المنجزة: 24 قطعة هذا الشهر</div>
+                </div>
+                <span class="bg-brand-orangeSoft text-brand-orange font-bold text-[10px] px-2.5 py-1 rounded-lg">
+                  احتساب الحافز ←
+                </span>
+              </div>
+
+              <div onclick="openCsCalcModal('سارة', 18, [ { name: 'سماعات Redmi Buds 5', qty: 12, defaultBonus: 400 }, { name: 'شواحن سيارة Anker', qty: 6, defaultBonus: 300 } ])" class="cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition clean-card-hover">
+                <div>
+                  <div class="text-xs font-extrabold text-slate-800">سارة (متابعة وتسويق هاتفي)</div>
+                  <div class="text-[10px] text-slate-400">إجمالي المبيعات المنجزة: 18 قطعة هذا الشهر</div>
+                </div>
+                <span class="bg-brand-orangeSoft text-brand-orange font-bold text-[10px] px-2.5 py-1 rounded-lg">
+                  احتساب الحافز ←
+                </span>
+              </div>
+
+              <!-- ملخص الحوافز المعلقة -->
+              <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm mt-auto text-center">
+                <div class="text-[10px] font-bold text-slate-400">إجمالي الحوافز المقيدة والمرحلة كالتزام للموظفين</div>
+                <div class="text-sm font-black text-rose-600 mt-0.5" data-currency-val="95">$95 (51,000 ﷼)</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 5. شاشة التقارير (تحليل إعلانات إنستغرام وهامش الربح) -->
+          <div id="view-reports" class="screen-view screen-fade p-3.5 hidden flex-col gap-3">
+            
+            <div class="flex bg-slate-200/80 p-1 rounded-xl">
+              <button onclick="setReportPeriod(this)" class="flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-600 hover:text-brand-dark transition">اليوم</button>
+              <button onclick="setReportPeriod(this)" class="flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-600 hover:text-brand-dark transition">الأسبوع</button>
+              <button onclick="setReportPeriod(this)" class="flex-1 py-1 text-[11px] font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition">الشهر</button>
+              <button onclick="setReportPeriod(this)" class="flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-600 hover:text-brand-dark transition">مخصص</button>
+            </div>
+
+            <!-- بطاقة هامش صافي الربح الحقيقي -->
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-[11px] font-bold text-slate-400 mb-1">هامش صافي الربح الفعلي (Net Margin %)</div>
+              <div class="flex items-baseline justify-between">
+                <span class="text-2xl font-black text-brand-dark">28.4%</span>
+                <span class="text-xs font-extrabold text-emerald-600" data-currency-val="4050">صافي الربح: $4,050</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                <div class="h-full bg-emerald-500 rounded-full" style="width: 28.4%;"></div>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1.5 flex justify-between">
+                <span>المبيعات: $14,250</span>
+                <span>التكلفة والمصاريف والعمولات: $10,200</span>
+              </div>
+            </div>
+
+            <!-- تحليل تمويل إعلانات إنستغرام الذكي (مفيد أم خاسر؟) -->
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-2.5">
+              <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-base">📸</span>
+                  <span class="text-xs font-extrabold text-slate-800">تحليل جدوى إعلانات إنستغرام للمنتجات</span>
+                </div>
+                <span class="text-[10px] text-slate-400">مقارنة التمويل بالمبيعات</span>
+              </div>
+
+              <!-- صنف تمويله مفيد -->
+              <div class="bg-emerald-50/60 border border-emerald-200/80 p-2.5 rounded-xl flex flex-col gap-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-black text-emerald-950">1. Samsung Galaxy A55</span>
+                  <span class="bg-emerald-200/80 text-emerald-800 text-[9px] font-black px-2 py-0.5 rounded-md">
+                    تمويل مفيد ومربح جداً - استمر ★
+                  </span>
+                </div>
+                <div class="text-[10px] text-slate-600 flex justify-between">
+                  <span>صُرف على الإعلان: <strong class="text-rose-600">$200</strong></span>
+                  <span>حقق: <strong class="text-emerald-700">42 طلباً ($9,240)</strong></span>
+                  <span>عائد الإعلان: <strong class="text-brand-orange">4.6x</strong></span>
+                </div>
+              </div>
+
+              <!-- صنف تمويله خاسر -->
+              <div class="bg-rose-50/60 border border-rose-200/80 p-2.5 rounded-xl flex flex-col gap-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-black text-rose-950">2. سماعة لاسلكية موديل X2</span>
+                  <span class="bg-rose-200/80 text-rose-800 text-[9px] font-black px-2 py-0.5 rounded-md">
+                    تمويل غير مجدٍ وخاسر - أوقف الإعلان ⚠️
+                  </span>
+                </div>
+                <div class="text-[10px] text-slate-600 flex justify-between">
+                  <span>صُرف على الإعلان: <strong class="text-rose-600">$150</strong></span>
+                  <span>حقق: <strong class="text-slate-500">3 طلبات فقط ($90)</strong></span>
+                  <span class="text-rose-700 font-bold">خسارة تسويقية</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- نسبة توزيع المخزون -->
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-[11px] font-bold text-slate-400 mb-1">توزيع المخزون التجاري</div>
+              <div class="flex justify-between text-xs font-bold text-slate-700">
+                <span>المخزن الرئيسي (65%)</span>
+                <span>مع المناديب والوكلاء (35%)</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full mt-1.5 overflow-hidden flex">
+                <div class="bg-brand-dark h-full" style="width: 65%;"></div>
+                <div class="bg-brand-orange h-full" style="width: 35%;"></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ================= 3. شريط التنقل السفلي الخماسي ================= -->
+        <nav class="h-16 bg-white border-t border-slate-200 flex justify-around items-center px-1 z-30 shadow-lg">
+          <button onclick="navigateToTab('home')" id="nav-btn-home" class="nav-tab flex flex-col items-center gap-0.5 text-brand-orange font-bold text-[10px] transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            الرئيسية
+          </button>
+          <button onclick="navigateToTab('inventory')" id="nav-btn-inventory" class="nav-tab flex flex-col items-center gap-0.5 text-slate-400 font-bold text-[10px] transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            المخزن
+          </button>
+          <button onclick="navigateToTab('orders')" id="nav-btn-orders" class="nav-tab flex flex-col items-center gap-0.5 text-slate-400 font-bold text-[10px] transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            الطلبات
+          </button>
+          <button onclick="navigateToTab('finance')" id="nav-btn-finance" class="nav-tab flex flex-col items-center gap-0.5 text-slate-400 font-bold text-[10px] transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            المالية
+          </button>
+          <button onclick="navigateToTab('reports')" id="nav-btn-reports" class="nav-tab flex flex-col items-center gap-0.5 text-slate-400 font-bold text-[10px] transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            التقارير
+          </button>
+        </nav>
+
+      </div>
+    </div>
+
+    <!-- ================= 4. بانوراما المقارنة المباشرة للشاشات الخمس ================= -->
+    <div id="showcase-grid-wrapper" class="hidden flex-wrap justify-center gap-5 max-w-7xl">
+      <!-- يتم توليدها بالجافاسكربت عند النقر على زر البانوراما -->
+    </div>
+
+  </main>
+
+  <!-- ================= 5. النوافذ المنبثقة التفاعلية (Modals) ================= -->
+
+  <!-- نافذة إنشاء محفظة / حساب مالي جديد -->
+  <div id="modal-add-wallet" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <h3 class="font-black text-sm text-brand-dark">إنشاء محفظة / حساب مالي جديد</h3>
+        <button onclick="closeModal('modal-add-wallet')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+      <div class="overflow-y-auto flex-1 flex flex-col gap-3 text-xs pr-1">
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">اسم المحفظة أو الحساب:</label>
+          <input type="text" id="new-wallet-name" placeholder="مثال: محفظة جيب، محفظة جوالي، بنك الكريمي" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 focus:outline-none focus:border-brand-orange">
+        </div>
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">رقم المحفظة / الحساب (اختياري):</label>
+          <input type="text" id="new-wallet-num" placeholder="مثال: 770169518" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-semibold font-mono text-slate-800 focus:outline-none focus:border-brand-orange">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">العملة الأساسية:</label>
+            <select id="new-wallet-curr" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-brand-dark focus:outline-none">
+              <option value="YER">ريال يمني (YER)</option>
+              <option value="USD">دولار أمريكي (USD)</option>
+              <option value="SAR">ريال سعودي (SAR)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">الرصيد الافتتاحي المتوفر:</label>
+            <input type="number" id="new-wallet-bal" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-800 focus:outline-none focus:border-brand-orange">
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-400 bg-slate-50 p-2 rounded-xl">
+          💡 ستعمل المحفظة كدفتر حساب مستقل؛ يتم توريد مبيعات الطلبات إليها وخصم المصروفات والتمويلات منها مباشرة.
+        </p>
+        <button onclick="saveNewWallet()" class="w-full bg-brand-orange hover:bg-brand-orangeHover active:scale-95 text-white font-bold py-2.5 rounded-xl shadow-md shadow-brand-orange/20 mt-2 transition">
+          تثبيت وحفظ المحفظة في المالية
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة احتساب حافز خدمة العملاء اليدوي -->
+  <div id="modal-cs-calc" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-2">
+        <div>
+          <h3 id="cs-calc-name" class="font-black text-sm text-brand-dark">كشف مبيعات وحافز: أصيل</h3>
+          <p id="cs-calc-total-items" class="text-[10px] text-slate-400">إجمالي المبيعات المحققة: 24 قطعة</p>
+        </div>
+        <button onclick="closeModal('modal-cs-calc')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 flex flex-col gap-3 text-xs pr-1">
+        <div class="bg-amber-50/80 border border-amber-200/80 p-2 rounded-xl text-[10px] text-amber-900 font-semibold">
+          ✍️ أدخل قيمة الحافز/الإكرامية التي يستحقها الموظف يدوياً على كل قطعة باprocessها:
+        </div>
+
+        <!-- قائمة الأصناف المباعة وحقول الحافز اليدوي -->
+        <div id="cs-calc-items-list" class="flex flex-col gap-2.5">
+          <!-- يتم ملؤها ديناميكياً بالجافاسكربت -->
+        </div>
+
+        <!-- إجمالي الحافز المجموع -->
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex justify-between items-center mt-1">
+          <div>
+            <span class="text-[10px] text-slate-400 block font-bold">إجمالي الحافز المحسوب:</span>
+            <span id="cs-calc-total-bonus" class="text-base font-black text-brand-orange">27,000 ريال يمني</span>
+          </div>
+          <button onclick="recalculateCsBonus()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1.5 rounded-lg text-[10px] font-bold">
+            🔄 إعادة تجميع
+          </button>
+        </div>
+
+        <!-- تحديد المحفظة التي سيتم الصرف منها في حال اختار الصرف الآن -->
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <label class="font-bold text-slate-600 block mb-1">في حال الصرف الآن، اختر المحفظة للخصم:</label>
+          <select id="cs-payout-wallet-select" class="w-full bg-white border border-slate-200 rounded-lg p-1.5 font-bold text-slate-700">
+            <option value="jeeb">محفظة جيب (خصم 27,000 ﷼)</option>
+            <option value="floosak">محفظة فلوسك (خصم 27,000 ﷼)</option>
+            <option value="cash">درج الكاش الرئيسي</option>
+          </select>
+        </div>
+
+        <!-- زرا القرار: تسليم وصرف الآن، أو تقييد وترحيل -->
+        <div class="flex gap-2 mt-2">
+          <button onclick="settleCsBonus('pay')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-2 rounded-xl transition text-[11px] text-center shadow-md shadow-emerald-600/20">
+            تسليم وصرف الآن (خصم من المحفظة)
+          </button>
+          <button onclick="settleCsBonus('postpone')" class="flex-1 bg-brand-dark hover:bg-brand-navy active:scale-95 text-white font-bold py-2 rounded-xl transition text-[11px] text-center shadow-md">
+            تقييد وترحيل كمستحق
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة تسجيل صنف / دفعة جديدة (تشمل خيار الهدايا وتمويل إعلانات IG) -->
+  <div id="modal-add-product" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <h3 class="font-black text-sm text-brand-dark">تسجيل صنف / دفعة مخزون جديدة</h3>
+        <button onclick="closeModal('modal-add-product')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 flex flex-col gap-2.5 text-xs pr-1">
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">اسم الصنف:</label>
+          <input type="text" placeholder="مثال: شاحن سيارة سريع Anker" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+        </div>
+
+        <!-- القائمة المنسدلة للتصنيف (صنف تجاري أو هدايا) -->
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">تصنيف الصنف:</label>
+          <select id="prod-type-select" onchange="toggleGiftNotice(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold text-brand-dark">
+            <option value="commercial">صنف تجاري (مخزون للبيع والأرباح)</option>
+            <option value="gift">صنف هدايا ترويجية للعملاء (بدون سعر بيع)</option>
+          </select>
+          <p id="gift-notice" class="text-[9px] text-amber-700 mt-1 hidden bg-amber-50 p-1.5 rounded-lg border border-amber-200">
+            📌 تنبيه: أصناف الهدايا لا تدخل في إجمالي عدد ولا قيمة المخزون التجاري، وتعد كمصروف دعائي في عداد الهدايا المستقل.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">سعر الشراء (التكلفة):</label>
+            <input type="number" placeholder="$15" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">سعر البيع المقترح:</label>
+            <input type="number" placeholder="$25" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">رقم الدفعة:</label>
+            <input type="text" placeholder="#BT-405" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold font-mono">
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">الكمية الواردة:</label>
+            <input type="number" placeholder="50 قطعة" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+          </div>
+        </div>
+
+        <!-- حقل تمويل إعلانات إنستغرام للصنف -->
+        <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+          <label class="font-bold text-slate-700 block mb-1">ميزانية تمويل إعلان إنستغرام (إن وجدت):</label>
+          <input type="number" placeholder="$50" class="w-full bg-white border border-slate-200 rounded-xl p-2 font-semibold">
+          <span class="text-[9px] text-slate-400 mt-1 block">تُسجل وتخصم من المحفظة لحساب جدوى وأرباح الصنف في التقارير</span>
+        </div>
+
+        <button onclick="saveProductMock()" class="w-full bg-brand-orange text-white font-bold py-2.5 rounded-xl shadow-md shadow-brand-orange/20 mt-2">
+          حفظ الصنف وتحديث المخزون
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة إنشاء مخزن وكيل -->
+  <div id="modal-create-agent" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <h3 class="font-black text-sm text-brand-dark">إنشاء مخزن جديد لوكيل أو مندوب</h3>
+        <button onclick="closeModal('modal-create-agent')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 flex flex-col gap-2.5 text-xs pr-1">
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">اسم الوكيل أو المندوب:</label>
+          <input type="text" id="new-agent-name" placeholder="مثال: المندوب صخر، وكيل ذمار" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+        </div>
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">رقم الهاتف:</label>
+          <input type="text" placeholder="770000000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold font-mono">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">المنتج المسلم له:</label>
+            <input type="text" placeholder="شواحن سريعة" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">الكمية المسلمة:</label>
+            <input type="number" placeholder="20 قطعة" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+          </div>
+        </div>
+        <p class="text-[9px] text-slate-400">📌 يتم خصم الكمية تلقائياً من المخزن الرئيسي وإضافتها لعهدة الوكيل دون تكرار احتسابها في إجمالي المخزون.</p>
+        <button onclick="saveNewAgent()" class="w-full bg-brand-orange text-white font-bold py-2.5 rounded-xl shadow-md shadow-brand-orange/20 mt-2">
+          حفظ وإنشاء بطاقة المخزن
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة إنشاء طلب جديد -->
+  <div id="modal-new-order" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <h3 class="font-black text-sm text-brand-dark">تسجيل طلب جديد وتحديد الصرف</h3>
+        <button onclick="closeModal('modal-new-order')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 flex flex-col gap-2.5 text-xs pr-1">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">اسم العميل:</label>
+            <input type="text" placeholder="محمد ناصر" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">رقم الهاتف:</label>
+            <input type="text" placeholder="770000000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold font-mono">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">نطاق التوصيل:</label>
+          <select id="delivery-scope-select" onchange="toggleDeliveryScope(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold text-brand-dark">
+            <option value="sanaa">داخل صنعاء (عبر مناديب المتجر)</option>
+            <option value="outside">خارج صنعاء (عبر مكاتب توصيل الطرود)</option>
+          </select>
+        </div>
+
+        <div id="scope-sanaa-box" class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex flex-col gap-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">المندوب الموصل:</label>
+              <select class="w-full bg-white border border-slate-200 rounded-xl p-2 font-semibold">
+                <option>المندوب مجدي ناصر (يخصم من عهدته)</option>
+                <option>المندوب وليد سعيد (يخصم من عهدته)</option>
+                <option>المخزن الرئيسي مباشرة</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">أجرة المندوب (يدوياً):</label>
+              <input type="number" placeholder="$3" class="w-full bg-white border border-slate-200 rounded-xl p-2 font-semibold">
+            </div>
+          </div>
+        </div>
+
+        <div id="scope-outside-box" class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex flex-col gap-2 hidden">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">مكتب توصيل الطرود:</label>
+              <input type="text" placeholder="مكتب الرويشان / النمر" class="w-full bg-white border border-slate-200 rounded-xl p-2 font-semibold">
+            </div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">أجرة المكتب:</label>
+              <input type="number" placeholder="$5" class="w-full bg-white border border-slate-200 rounded-xl p-2 font-semibold">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">طريقة الدفع:</label>
+            <select class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold text-brand-dark">
+              <option>دفع مسبق (يورد لمحفظة جيب/فلوسك)</option>
+              <option>دفع عند الاستلام (عهدة على المندوب)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">موظف خدمة العملاء:</label>
+            <select class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold text-brand-dark">
+              <option>أصيل (مبيعات)</option>
+              <option>سارة (تسويق)</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="saveOrderMock()" class="w-full bg-brand-orange text-white font-bold py-2.5 rounded-xl shadow-md shadow-brand-orange/20 mt-2">
+          حفظ الفاتورة وتحديث الأرصدة
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة أسباب تعذر التسليم الأربعة -->
+  <div id="modal-failed-reason" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <h3 class="font-black text-sm text-rose-600">تسجيل تعذر التسليم للطلب</h3>
+        <button onclick="closeModal('modal-failed-reason')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+      <div class="text-xs flex flex-col gap-2">
+        <span class="font-bold text-slate-700">اختر سبب تعذر التسليم المعتمد:</span>
+        <button onclick="confirmFailedReason('عدم تجاوب العميل')" class="p-2.5 bg-slate-50 hover:bg-rose-50 text-slate-800 hover:text-rose-700 rounded-xl border border-slate-200 text-right font-bold transition">
+          1. عدم تجاوب العميل نهائياً
+        </button>
+        <button onclick="confirmFailedReason('عدم الرد على اتصالات المندوب')" class="p-2.5 bg-slate-50 hover:bg-rose-50 text-slate-800 hover:text-rose-700 rounded-xl border border-slate-200 text-right font-bold transition">
+          2. عدم الرد على اتصالات المندوب
+        </button>
+        <button onclick="confirmFailedReason('عدم تجاوب المندوب مع المتجر')" class="p-2.5 bg-slate-50 hover:bg-rose-50 text-slate-800 hover:text-rose-700 rounded-xl border border-slate-200 text-right font-bold transition">
+          3. عدم تجاوب المندوب مع إدارة المتجر
+        </button>
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">4. سبب آخر (توضيح كتابي):</label>
+          <input type="text" id="custom-failed-reason" placeholder="اكتب السبب هنا..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+        </div>
+        <button onclick="confirmFailedReason(document.getElementById('custom-failed-reason').value || 'سبب خاص')" class="w-full bg-rose-600 text-white font-bold py-2 rounded-xl mt-2">
+          تأكيد وإرجاع الكمية للمخزن
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة تفاصيل المخزن للمنتجات المصغرة -->
+  <div id="modal-warehouse" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <div>
+          <h3 id="modal-wh-title" class="font-black text-sm text-brand-dark">المخزن الرئيسي</h3>
+          <p id="modal-wh-desc" class="text-[10px] text-slate-400">مركز الإمداد العام لكافة الأصناف</p>
+        </div>
+        <button onclick="closeModal('modal-warehouse')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 flex flex-col gap-2.5 text-xs pr-1">
+        <div class="flex gap-2 mb-1">
+          <button onclick="showToast('تم فتح نافذة تسليم عهدة لهذا المخزن')" class="flex-1 bg-brand-orange text-white text-xs font-bold py-2 rounded-xl">+ تسليم بضاعة</button>
+          <button onclick="showToast('تم تسجيل استرجاع بضاعة إلى المخزن الرئيسي')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-xl">استرجاع للرئيسي</button>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl flex-shrink-0">📱</div>
+          <div class="flex-1">
+            <div class="text-xs font-extrabold text-slate-800">Samsung Galaxy A55 5G</div>
+            <div class="text-[10px] text-slate-400">دفعة: #BT-884 | تكلفة: $190</div>
+            <div class="text-[10px] font-bold text-brand-orange">القيمة: $2,280</div>
+          </div>
+          <div class="bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-1 rounded-lg text-xs font-black">
+            12 قطعة
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl flex-shrink-0">🎁</div>
+          <div class="flex-1">
+            <div class="text-xs font-extrabold text-amber-900">حامل هاتف مغناطيسي (صنف هدايا)</div>
+            <div class="text-[10px] text-amber-700">هدايا مجانية للعملاء المميزين</div>
+            <div class="text-[10px] font-bold text-slate-400">لا يُحسب ضمن قيمة المخزون التجاري</div>
+          </div>
+          <div class="bg-amber-100 border border-amber-300 text-amber-800 px-2 py-1 rounded-lg text-xs font-black">
+            25 هدية
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة تفاصيل الفاتورة -->
+  <div id="modal-invoice" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <div>
+          <h3 id="inv-modal-id" class="font-black text-sm text-brand-dark">فاتورة #ORD-1092</h3>
+          <p id="inv-modal-client" class="text-[10px] text-slate-400">محمد علي الكبسي</p>
+        </div>
+        <button onclick="closeModal('modal-invoice')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 flex flex-col gap-2.5 text-xs">
+        <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex justify-between items-center">
+          <div>
+            <div class="text-[10px] font-bold text-slate-400">مسار وحالة التوصيل:</div>
+            <div id="inv-modal-source" class="text-xs font-black text-brand-dark mt-0.5">داخل صنعاء (المندوب مجدي)</div>
+          </div>
+          <span id="inv-modal-status-badge" class="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded">تم التسليم تماماً</span>
+        </div>
+
+        <div class="border border-slate-200 rounded-2xl p-2.5 flex flex-col gap-1.5">
+          <div class="text-[11px] font-extrabold text-slate-700 border-b border-slate-100 pb-1">المواد المصروفة</div>
+          <div class="flex justify-between">
+            <span>2× هاتف Galaxy A55</span>
+            <span class="font-bold text-brand-dark">$380</span>
+          </div>
+          <div class="flex justify-between">
+            <span>2× شاحن سريع 67W</span>
+            <span class="font-bold text-brand-dark">$40</span>
+          </div>
+          <div class="flex justify-between text-amber-700 font-bold border-t border-slate-100 pt-1">
+            <span>🎁 هدية مجانية: حامل مغناطيسي</span>
+            <span>$0</span>
+          </div>
+        </div>
+
+        <div class="bg-brand-orangeSoft/30 border border-brand-orange/30 rounded-2xl p-2.5 flex flex-col gap-1 text-xs">
+          <div class="flex justify-between font-bold text-slate-700">
+            <span>إجمالي الفاتورة:</span>
+            <span id="inv-modal-total" class="font-black text-brand-dark text-sm">$420</span>
+          </div>
+          <div class="flex justify-between text-slate-500 text-[11px]">
+            <span>أجرة المندوب المستحقة:</span>
+            <span>$3</span>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-auto">
+          <button onclick="showToast('تم تصدير فاتورة PDF رسمية للمشاركة 📄')" class="flex-1 bg-brand-dark text-white text-xs font-bold py-2 rounded-xl">
+            طباعة الفاتورة PDF
+          </button>
+          <button onclick="closeModal('modal-invoice'); openFailedReasonModal('ORD-1092', 'محمد علي الكبسي', '');" class="flex-1 bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold py-2 rounded-xl">
+            تعذر التسليم
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة دفتر الحساب المالي للمحفظة -->
+  <div id="modal-account" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <div>
+          <h3 id="acc-modal-title" class="font-black text-sm text-brand-dark">محفظة جيب</h3>
+          <p id="acc-modal-sub" class="text-[10px] text-slate-400">حساب: 770169518</p>
+        </div>
+        <button onclick="closeModal('modal-account')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+      <div class="text-xs flex flex-col gap-2.5">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+          <span class="text-slate-500 font-bold">الرصيد الفعلي الحالي:</span>
+          <span id="acc-modal-bal" class="font-black text-emerald-600 text-base">450,000 ﷼</span>
+        </div>
+        <div id="acc-modal-summary" class="bg-white p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-500 leading-relaxed">
+          مستقبل مدفوعات إلكترونية ومبيعات فورية
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button onclick="showToast('تم فتح سند إيداع / قبض في المحفظة')" class="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-xl">+ إيداع بالمحفظة</button>
+          <button onclick="showToast('تم فتح سند سحب / تحويل من المحفظة')" class="flex-1 bg-rose-600 text-white font-bold py-2 rounded-xl">- سحب / تحويل</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة تفاصيل العميل -->
+  <div id="modal-customer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-5 shadow-2xl flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+        <div>
+          <h3 id="cust-modal-name" class="font-black text-sm text-brand-dark">محمد علي الكبسي</h3>
+          <p id="cust-modal-phone" class="text-[10px] text-slate-400">770123456</p>
+        </div>
+        <button onclick="closeModal('modal-customer')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+      <div class="text-xs flex flex-col gap-2.5">
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex justify-between items-center">
+          <div>
+            <span class="text-[10px] text-slate-400 block">الموقع المعتمد:</span>
+            <span id="cust-modal-location" class="font-bold text-slate-700">صنعاء - شارع تعز</span>
+          </div>
+          <span id="cust-modal-rank" class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-md">زبون مميز VIP ⭐</span>
+        </div>
+        <div class="flex justify-between items-center p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
+          <span class="font-bold text-rose-700">الرصيد المتبقي بذمته:</span>
+          <span id="cust-modal-balance" class="font-black text-rose-600 text-sm">$0</span>
+        </div>
+        <button onclick="showToast('تم فتح كشف حساب تفصيلي للعميل')" class="w-full bg-brand-dark text-white font-bold py-2 rounded-xl mt-2">
+          كشف حساب العميل والطلبات
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- القائمة الجانبية المفرغة كما طُلب -->
+  <div id="modal-drawer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-start p-0 hidden">
+    <div class="bg-brand-dark w-72 h-full p-5 shadow-2xl flex flex-col text-white">
+      <div class="flex justify-between items-center border-b border-brand-navy pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-orange flex items-center justify-center font-bold text-white">M</div>
+          <span class="font-extrabold text-sm">مهند ستور</span>
+        </div>
+        <button onclick="closeModal('modal-drawer')" class="text-slate-400 hover:text-white font-bold text-base">✕</button>
+      </div>
+      <div class="flex-1 flex flex-col items-center justify-center text-center p-4 border border-dashed border-brand-lightNavy/50 rounded-2xl my-auto">
+        <span class="text-xs font-bold text-slate-300">مساحة القائمة الجانبية المفرغة</span>
+        <p class="text-[10px] text-slate-500 mt-1">مخصصة لإضافة بيانات المطور وإصدار التطبيق لاحقاً بدون أي قوائم مشتتة.</p>
+      </div>
+      <div class="text-center text-[10px] text-slate-500 pt-3 border-t border-brand-navy">
+        مهند ستور v1.3 Enterprise
+      </div>
+    </div>
+  </div>
+
+  <!-- إشعار Toast تفاعلي ناعم -->
+  <div id="toast-notification" class="fixed bottom-6 z-50 bg-brand-dark text-white px-5 py-3 rounded-2xl border border-brand-orange shadow-2xl text-xs font-bold transition-all transform translate-y-24 opacity-0 flex items-center gap-2.5">
+    <span class="text-brand-orange text-sm">⚡</span>
+    <span id="toast-message">تمت العملية بنجاح</span>
+  </div>
+
+  <!-- ================= 6. كود الجافاسكربت الشامل لإدارة الحالة والتفاعل ================= -->
+  <script>
+    // ساعة الهاتف الحية
+    function updateClock() {
+      const now = new Date();
+      let h = now.getHours().toString().padStart(2, '0');
+      let m = now.getMinutes().toString().padStart(2, '0');
+      const clock = document.getElementById('live-clock');
+      if (clock) clock.innerText = h + ':' + m;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // نظام تحويل العملات الحية (USD, YER, SAR)
+    const exchangeRates = {
+      USD: { symbol: '$', rate: 1 },
+      YER: { symbol: '﷼', rate: 535 },
+      SAR: { symbol: 'ر.س', rate: 3.75 }
+    };
+    let currentCurrency = 'USD';
+
+    function changeCurrency(curr) {
+      currentCurrency = curr;
+      const { symbol, rate } = exchangeRates[curr];
+      
+      document.querySelectorAll('[data-currency-val]').forEach(el => {
+        const baseUSD = parseFloat(el.getAttribute('data-currency-val'));
+        if (!isNaN(baseUSD)) {
+          const converted = Math.round(baseUSD * rate);
+          el.innerText = `${symbol}${converted.toLocaleString()}`;
+        }
+      });
+
+      showToast(`تم تحويل عرض المبالغ تلقائياً إلى: ${curr} (${symbol})`);
+    }
+
+    // التنقل بين شاشات التطبيق الخمس
+    function navigateToTab(tabName) {
+      document.querySelectorAll('.screen-view').forEach(v => {
+        v.classList.add('hidden');
+        v.classList.remove('flex');
+      });
+
+      const activeView = document.getElementById('view-' + tabName);
+      if (activeView) {
+        activeView.classList.remove('hidden');
+        activeView.classList.add('flex');
+      }
+
+      document.querySelectorAll('.nav-tab').forEach(b => {
+        b.classList.remove('text-brand-orange');
+        b.classList.add('text-slate-400');
+        const icon = b.querySelector('svg');
+        if (icon) icon.setAttribute('stroke-width', '2');
+      });
+
+      const activeBtn = document.getElementById('nav-btn-' + tabName);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('text-brand-orange');
+        const icon = activeBtn.querySelector('svg');
+        if (icon) icon.setAttribute('stroke-width', '2.4');
+      }
+
+      const titles = {
+        home: { t: 'الرئيسية', s: 'لوحة المؤشرات والقيادة' },
+        inventory: { t: 'إدارة المخزن', s: 'الرئيسي والوكلاء والهدايا' },
+        orders: { t: 'الطلبات والمبيعات', s: 'صنعاء، المحافظات، والعملاء' },
+        finance: { t: 'المالية والمحافظ', s: 'محافظ الدفع وحوافز المبيعات' },
+        reports: { t: 'التقارير والتحليلات', s: 'الربحية وجدوى إعلانات إنستغرام' }
+      };
+
+      document.getElementById('appbar-title').innerText = titles[tabName].t;
+      document.getElementById('appbar-subtitle').innerText = titles[tabName].s;
+    }
+
+    // التبديل بين قسم المحافظ وحوافز خدمة العملاء في المالية
+    function toggleFinanceSub(view) {
+      const wBtn = document.getElementById('tab-wallets-btn');
+      const csBtn = document.getElementById('tab-cs-btn');
+      const wView = document.getElementById('finance-wallets-view');
+      const csView = document.getElementById('finance-cs-view');
+
+      if (view === 'wallets') {
+        wBtn.className = 'flex-1 py-1.5 text-xs font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition';
+        csBtn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-dark transition';
+        wView.classList.remove('hidden');
+        wView.classList.add('flex');
+        csView.classList.add('hidden');
+        csView.classList.remove('flex');
+      } else {
+        csBtn.className = 'flex-1 py-1.5 text-xs font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition';
+        wBtn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-dark transition';
+        csView.classList.remove('hidden');
+        csView.classList.add('flex');
+        wView.classList.add('hidden');
+        wView.classList.remove('flex');
+      }
+    }
+
+    // حفظ محفظة مالية جديدة وتحديث القائمة
+    let totalLiquidityUSD = 8450;
+    function saveNewWallet() {
+      const name = document.getElementById('new-wallet-name').value.trim();
+      const num = document.getElementById('new-wallet-num').value.trim();
+      const curr = document.getElementById('new-wallet-curr').value;
+      const balStr = document.getElementById('new-wallet-bal').value;
+      const bal = parseFloat(balStr) || 0;
+
+      if (!name) {
+        showToast('يرجى كتابة اسم المحفظة أولاً');
+        return;
+      }
+
+      // إضافة البطاقة إلى القائمة
+      const container = document.getElementById('wallets-list-container');
+      const newCard = document.createElement('div');
+      newCard.className = 'cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm flex justify-between items-center transition clean-card-hover';
+      
+      const currSymbol = curr === 'YER' ? '﷼' : (curr === 'SAR' ? 'ر.س' : '$');
+      const usdEquiv = curr === 'YER' ? (bal / 535) : (curr === 'SAR' ? (bal / 3.75) : bal);
+      totalLiquidityUSD += usdEquiv;
+
+      newCard.onclick = () => {
+        openAccountLedgerDetailsModal(name, `${bal.toLocaleString()} ${currSymbol}`, num ? `حساب: ${num}` : 'محفظة مالية نشطة', 'حساب مالي مستقل تم إنشاؤه لإدارة السيولة');
+      };
+
+      newCard.innerHTML = `
+        <div>
+          <div class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            ${name}
+          </div>
+          <div class="text-[10px] text-slate-400">${num ? 'حساب: ' + num : 'محفظة مالية نشطة'}</div>
+        </div>
+        <div class="text-sm font-black text-emerald-600">${bal.toLocaleString()} ${currSymbol}</div>
+      `;
+
+      container.prepend(newCard);
+
+      // تحديث السيولة الإجمالية
+      const finTotalEl = document.getElementById('finance-total-liquidity');
+      const homeTotalEl = document.getElementById('home-total-liquidity');
+      finTotalEl.setAttribute('data-currency-val', Math.round(totalLiquidityUSD));
+      homeTotalEl.setAttribute('data-currency-val', Math.round(totalLiquidityUSD));
+      finTotalEl.innerText = `$${Math.round(totalLiquidityUSD).toLocaleString()}`;
+      homeTotalEl.innerText = `$${Math.round(totalLiquidityUSD).toLocaleString()}`;
+
+      closeModal('modal-add-wallet');
+      showToast(`تم إنشاء وتثبيت "${name}" بنجاح وتحديث إجمالي السيولة ✔`);
+      
+      // تفريغ الحقول
+      document.getElementById('new-wallet-name').value = '';
+      document.getElementById('new-wallet-num').value = '';
+      document.getElementById('new-wallet-bal').value = '';
+    }
+
+    // إدارة احتساب حافز خدمة العملاء اليدوي
+    let currentCsCalcData = null;
+    function openCsCalcModal(name, totalItems, items) {
+      currentCsCalcData = { name, totalItems, items };
+      document.getElementById('cs-calc-name').innerText = `كشف مبيعات وحافز: ${name}`;
+      document.getElementById('cs-calc-total-items').innerText = `إجمالي المبيعات المنجزة: ${totalItems} قطعة`;
+
+      const listContainer = document.getElementById('cs-calc-items-list');
+      listContainer.innerHTML = '';
+
+      items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-200';
+        row.innerHTML = `
+          <div>
+            <div class="text-xs font-bold text-slate-800">${item.name} (${item.qty} قطعة)</div>
+            <div class="text-[9px] text-slate-400">حدد إكرامية القطعة:</div>
+          </div>
+          <div class="flex items-center gap-1">
+            <input type="number" id="cs-item-bonus-${idx}" value="${item.defaultBonus}" oninput="recalculateCsBonus()" class="w-20 bg-white border border-slate-300 rounded-lg p-1.5 text-center font-bold text-slate-800 text-xs focus:outline-none focus:border-brand-orange">
+            <span class="text-[10px] font-bold text-slate-500">﷼</span>
+          </div>
+        `;
+        listContainer.appendChild(row);
+      });
+
+      recalculateCsBonus();
+      openModal('modal-cs-calc');
+    }
+
+    function recalculateCsBonus() {
+      if (!currentCsCalcData) return;
+      let totalBonus = 0;
+      currentCsCalcData.items.forEach((item, idx) => {
+        const input = document.getElementById(`cs-item-bonus-${idx}`);
+        const bonusPerItem = parseFloat(input ? input.value : item.defaultBonus) || 0;
+        totalBonus += (bonusPerItem * item.qty);
+      });
+
+      document.getElementById('cs-calc-total-bonus').innerText = `${totalBonus.toLocaleString()} ريال يمني`;
+    }
+
+    function settleCsBonus(action) {
+      const name = currentCsCalcData ? currentCsCalcData.name : 'الموظف';
+      const totalBonusText = document.getElementById('cs-calc-total-bonus').innerText;
+
+      closeModal('modal-cs-calc');
+      if (action === 'pay') {
+        const walletSelect = document.getElementById('cs-payout-wallet-select');
+        const selectedWallet = walletSelect.options[walletSelect.selectedIndex].text;
+        showToast(`تم صرف ${totalBonusText} للموظف (${name}) وخصمها فوراً من ${selectedWallet} ✔`);
+      } else {
+        showToast(`تم تقييد ${totalBonusText} وترحيلها كمستحق في ذمة المتجر للموظف (${name}) 📌`);
+      }
+    }
+
+    // تبديل التبويبات الفرعية في الطلبات
+    function setOrdersSubTab(sub) {
+      const btnOrders = document.getElementById('subtab-btn-orders');
+      const btnCust = document.getElementById('subtab-btn-customers');
+      const contentOrders = document.getElementById('orders-subcontent-orders');
+      const contentCust = document.getElementById('orders-subcontent-customers');
+
+      if (sub === 'orders') {
+        btnOrders.className = 'flex-1 py-1.5 text-xs font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition';
+        btnCust.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-dark transition';
+        contentOrders.classList.remove('hidden');
+        contentOrders.classList.add('flex');
+        contentCust.classList.add('hidden');
+        contentCust.classList.remove('flex');
+      } else {
+        btnCust.className = 'flex-1 py-1.5 text-xs font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition';
+        btnOrders.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-dark transition';
+        contentCust.classList.remove('hidden');
+        contentCust.classList.add('flex');
+        contentOrders.classList.add('hidden');
+        contentOrders.classList.remove('flex');
+      }
+    }
+
+    // فلاتر الطلبات السريعة
+    function filterOrderType(type, btn) {
+      document.querySelectorAll('.order-chip').forEach(b => {
+        b.className = 'order-chip px-3 py-1 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap';
+      });
+      btn.className = 'order-chip active px-3 py-1 rounded-xl bg-brand-dark text-white whitespace-nowrap';
+
+      document.querySelectorAll('.order-row').forEach(row => {
+        if (type === 'all' || row.getAttribute('data-type') === type) {
+          row.style.display = 'block';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    // تنبيه صنف الهدايا
+    function toggleGiftNotice(val) {
+      const notice = document.getElementById('gift-notice');
+      if (val === 'gift') {
+        notice.classList.remove('hidden');
+      } else {
+        notice.classList.add('hidden');
+      }
+    }
+
+    // تبديل نطاق التوصيل
+    function toggleDeliveryScope(val) {
+      const sanaaBox = document.getElementById('scope-sanaa-box');
+      const outsideBox = document.getElementById('scope-outside-box');
+      if (val === 'sanaa') {
+        sanaaBox.classList.remove('hidden');
+        outsideBox.classList.add('hidden');
+      } else {
+        sanaaBox.classList.add('hidden');
+        outsideBox.classList.remove('hidden');
+      }
+    }
+
+    // حفظ وكيل جديد وإضافته في صفحة المخزن
+    function saveNewAgent() {
+      const name = document.getElementById('new-agent-name').value.trim();
+      if (!name) {
+        showToast('يرجى كتابة اسم الوكيل أو المندوب أولاً');
+        return;
+      }
+
+      const container = document.getElementById('agents-cards-container');
+      const newCard = document.createElement('div');
+      newCard.className = 'cursor-pointer bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-brand-orange shadow-sm transition text-center transform hover:-translate-y-0.5 clean-card-hover';
+      newCard.onclick = () => {
+        openWarehouseDetailsModal(`مخزن الوكيل: ${name}`, 'مخزن فرعي وعهدة مستلمة تم إنشاؤها للوكيل', false);
+      };
+      newCard.innerHTML = `<div class="text-sm font-extrabold text-slate-800">مخزن الوكيل: ${name}</div>`;
+      container.appendChild(newCard);
+
+      closeModal('modal-create-agent');
+      showToast(`تم إنشاء بطاقة مخزن جديدة للوكيل (${name}) بنجاح ✔`);
+      document.getElementById('new-agent-name').value = '';
+    }
+
+    // أوضاع العرض: هاتف مفرد أو بانوراما الشاشات الخمس
+    function setPresentationMode(mode) {
+      const single = document.getElementById('interactive-phone-wrapper');
+      const showcase = document.getElementById('showcase-grid-wrapper');
+      const btnSingle = document.getElementById('btn-mode-single');
+      const btnShowcase = document.getElementById('btn-mode-showcase');
+
+      if (mode === 'single') {
+        single.classList.remove('hidden');
+        showcase.classList.add('hidden');
+        btnSingle.className = 'px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-white bg-brand-orange shadow-lg shadow-brand-orange/30';
+        btnShowcase.className = 'px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-300 hover:text-white';
+      } else {
+        single.classList.add('hidden');
+        showcase.classList.remove('hidden');
+        btnShowcase.className = 'px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-white bg-brand-orange shadow-lg shadow-brand-orange/30';
+        btnSingle.className = 'px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-300 hover:text-white';
+        renderShowcase();
+      }
+    }
+
+    function renderShowcase() {
+      const grid = document.getElementById('showcase-grid-wrapper');
+      grid.innerHTML = '';
+      const screens = [
+        { id: 'home', title: '1. الرئيسية والتنبيهات' },
+        { id: 'inventory', title: '2. المخزن ومخازن الوكلاء' },
+        { id: 'orders', title: '3. الطلبات ومكاتب الطرود' },
+        { id: 'finance', title: '4. المالية والمحافظ وحوافز CS' },
+        { id: 'reports', title: '5. التقارير وجدوى إعلانات IG' }
+      ];
+
+      screens.forEach(s => {
+        const phone = document.createElement('div');
+        phone.className = 'w-[325px] h-[690px] bg-white rounded-[38px] phone-shadow flex flex-col overflow-hidden border-2 border-slate-700 m-2';
+        phone.innerHTML = `
+          <div class="bg-brand-dark text-white text-[10px] font-bold px-4 py-2 flex justify-between items-center">
+            <span>09:30</span>
+            <div class="w-16 h-3 bg-black rounded-full"></div>
+            <span>Yemen</span>
+          </div>
+          <div class="bg-brand-dark text-white px-3 py-2 flex justify-between items-center border-b border-brand-navy">
+            <h4 class="font-bold text-xs">${s.title}</h4>
+            <span class="text-[9px] bg-brand-orange/20 text-brand-orange px-1.5 py-0.5 rounded">معاينة كاملة</span>
+          </div>
+          <div class="flex-1 bg-slate-50 overflow-hidden p-3 flex flex-col">
+            ${document.getElementById('view-' + s.id).innerHTML}
+          </div>
+        `;
+        grid.appendChild(phone);
+      });
+    }
+
+    // فتح وإغلاق النوافذ المنبثقة
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function openAddProductModal() { openModal('modal-add-product'); }
+    function openCreateAgentModal() { openModal('modal-create-agent'); }
+    function openNewOrderModal() { openModal('modal-new-order'); }
+    function openFailedReasonModal(id, client, reason) { openModal('modal-failed-reason'); }
+    function openDrawerPlaceholder() { openModal('modal-drawer'); }
+
+    function openWarehouseDetailsModal(name, desc, isMain) {
+      document.getElementById('modal-wh-title').innerText = name;
+      document.getElementById('modal-wh-desc').innerText = desc;
+      openModal('modal-warehouse');
+    }
+
+    function openInvoiceModal(id, client, total, route, status, stateKey) {
+      document.getElementById('inv-modal-id').innerText = 'فاتورة #' + id;
+      document.getElementById('inv-modal-client').innerText = client;
+      document.getElementById('inv-modal-source').innerText = route;
+      document.getElementById('inv-modal-total').innerText = total;
+      document.getElementById('inv-modal-status-badge').innerText = status;
+      openModal('modal-invoice');
+    }
+
+    function openCustomerDetailsModal(name, phone, loc, debt, badge, clean, rank) {
+      document.getElementById('cust-modal-name').innerText = name;
+      document.getElementById('cust-modal-phone').innerText = phone;
+      document.getElementById('cust-modal-location').innerText = loc;
+      document.getElementById('cust-modal-balance').innerText = debt;
+      document.getElementById('cust-modal-rank').innerText = rank;
+      openModal('modal-customer');
+    }
+
+    function openAccountLedgerDetailsModal(title, bal, sub, summary) {
+      document.getElementById('acc-modal-title').innerText = title;
+      document.getElementById('acc-modal-sub').innerText = sub;
+      document.getElementById('acc-modal-bal').innerText = bal;
+      document.getElementById('acc-modal-summary').innerText = summary;
+      openModal('modal-account');
+    }
+
+    function saveProductMock() {
+      closeModal('modal-add-product');
+      showToast('تم تسجيل الصنف الجديد وتحديث المخزون بنجاح ✔');
+    }
+
+    function saveOrderMock() {
+      closeModal('modal-new-order');
+      showToast('تم تسجيل الفاتورة وخصم الكمية آلياً من المخزن المختص ✔');
+    }
+
+    function confirmFailedReason(reason) {
+      closeModal('modal-failed-reason');
+      showToast(`تم قيد تعذر التسليم بالسبب: (${reason}) وأُعيدت الكمية للمخزن`);
+    }
+
+    function setReportPeriod(btn) {
+      btn.parentElement.querySelectorAll('button').forEach(b => {
+        b.className = 'flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-600 hover:text-brand-dark transition';
+      });
+      btn.className = 'flex-1 py-1 text-[11px] font-extrabold rounded-lg bg-white text-brand-dark shadow-sm transition';
+      showToast('تم تحديث نسب الأرباح وجدوى الإعلانات للفترة المحددة 📈');
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast-notification');
+      document.getElementById('toast-message').innerText = msg;
+      clearTimeout(toastTimer);
+      t.classList.remove('translate-y-24', 'opacity-0');
+      t.classList.add('translate-y-0', 'opacity-100');
+      toastTimer = setTimeout(() => {
+        t.classList.remove('translate-y-0', 'opacity-100');
+        t.classList.add('translate-y-24', 'opacity-0');
+      }, 2600);
+    }
+  </script>
+</body>
+</html>
